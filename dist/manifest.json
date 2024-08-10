@@ -1,0 +1,55 @@
+{
+  "manifest_version": 3,
+  "name": "Vlocity OmniStudio Helper",
+  "author": "Rohitkumar Asare",
+  "version": "1.0.0",
+  "description": "Boost Salesforce Vlocity OmniStudio Productivity by opening,executing IP, DR, Flexcards and OmniScripts.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "tabs",
+    "cookies"
+  ],
+  "host_permissions": [
+    "https://*.salesforce.com/*",
+    "https://*.my.salesforce.com/*",
+    "https://*.force.com/*",
+    "https://*.visualforce.com/*",
+    "https://*.visual.force.com/*",
+    "https://*.lightning.force.com/*",
+    "https://*.develop.lightning.force.com/*",
+    "https://*.my.site.com/*",
+    "https://*.cloudforce.com/*"
+  ],
+  "background": {
+    "service_worker": "js/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.salesforce.com/*",
+        "https://*.my.salesforce.com/*",
+        "https://*.force.com/*",
+        "https://*.visualforce.com/*",
+        "https://*.visual.force.com/*",
+        "https://*.lightning.force.com/*",
+        "https://*.develop.lightning.force.com/*",
+        "https://*.my.site.com/*",
+        "https://*.cloudforce.com/*"
+      ],
+      "js": [
+        "js/content-script.js"
+      ]
+    }
+  ],
+  "incognito": "split",
+  "action": {
+    "default_popup": "index.html"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

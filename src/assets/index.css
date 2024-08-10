@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@import url('https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&display=swap');
+
+/* Data Table Overriding CSS */
+html.dark .vue3-easy-data-table {
+    @apply dark:border-gray-600
+}
+
+html.dark .vue3-easy-data-table__main {
+    @apply dark:bg-gray-800 dark:text-gray-100
+}
+
+html.dark .vue3-easy-data-table__header th {
+    @apply text-center text-sm dark:bg-gray-700 dark:text-gray-100 bg-gray-100 border-b dark:border-gray-600;
+}
+
+html.dark .vue3-easy-data-table__body td {
+    @apply border-b dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100
+}
+
+html.dark .vue3-easy-data-table__footer {
+    @apply border-b dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100
+}
+
+html.dark .vue3-easy-data-table__body tr:first-child td {
+    @apply border-b dark:border-gray-600
+}
+
+html.dark .easy-data-table__rows-selector ul.select-items li {
+    @apply dark:text-gray-700
+}
+
+html.dark .easy-data-table__rows-selector ul.select-items li.selected {
+    @apply dark:text-gray-100
+}
+
+html.dark .previous-page__click-button .arrow, html.dark .next-page__click-button .arrow {
+    @apply border-sky-300
+}
+
+
+.tableCSS {
+    --easy-table-border: 1px solid #DDD;
+    --easy-table-header-font-size: 0.880rem;
+    --easy-table-header-background-color: #f3f4f6;
+    --easy-table-body-row-font-size: 0.875rem;
+    --easy-table-footer-height: 40px;
+    --easy-table-rows-per-page-selector-z-index: 9999;
+}
+
+.vue3-easy-data-table__main {
+    border: none !important;
+    border-top-left-radius: 0.5rem !important;
+    border-top-right-radius: 0.5rem !important;
+}
+
+.vue3-easy-data-table__footer {
+    border-bottom-left-radius: .5rem;
+    border-bottom-right-radius: .5rem;
+}
