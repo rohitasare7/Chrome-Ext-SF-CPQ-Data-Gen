@@ -53,3 +53,13 @@ export const getSalesforceURL = (orgIdentifier, sfHostURL, recId, type) => {
             return null;
     }
 };
+
+import toast from "./toast";
+export const addToast = (toastText, toastType) => {
+    toast.add({
+      message: {
+        text: toastText,
+        type: toastType ?? 'Success',
+      },
+    });
+  }
