@@ -438,7 +438,7 @@ const resetData = () => {
 
 //Creates all records in 1 click
 const oneClickAutomation = async () => {
-  isOneClickBtnLoading.value = true;
+  
   if (selectedProductList.value.length == 0) {
     addToast('Please select some products from Add to cart page.', 'Error');
     selectedStage.value = 'add_to_cart';
@@ -446,6 +446,7 @@ const oneClickAutomation = async () => {
   }
   else {
     try {
+      isOneClickBtnLoading.value = true;
       oneClickStatus.value = 'Creating Accounts..';
       await createAccountRecords();
       oneClickStatus.value = 'Creating Order..';
