@@ -11,11 +11,11 @@
                 !stage.completed && selectedStage !== stage.id ? 'text-gray-500 dark:text-gray-400' : ''
             ]" />
         </span>
-        <h3 class="font-medium leading-tight"
+        <h3 class="font-medium leading-tight text-base"
             :class="selectedStage === stage.id ? 'font-semibold text-gray-700 dark:text-gray-300' : ''">{{ stage.title
             }}
         </h3>
-        <p class="text-sm">{{ stage.description }}</p>
+        <p class="text-sm" :class="selectedStage === stage.id ? 'font-semibold text-gray-600 dark:text-gray-400' : ''">{{ stage.description }}</p>
     </li>
 </template>
 

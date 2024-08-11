@@ -9,47 +9,60 @@ export function saveToChrome(itemList) {
   });
 }
 
-export const saveRecord = async (newData, domain) => {
-    const existingRecords = await new Promise((resolve, reject) => {
-      chrome.storage.local.get({ [domain]: [] }, (result) => {
-        const existingRecords = result[domain];
-        resolve(existingRecords);
-      });
+//Save Record
+export const saveRecord = async (newData, domain, enforceSingleDefault = false) => {
+  const existingRecords = await new Promise((resolve, reject) => {
+    chrome.storage.local.get({ [domain]: [] }, (result) => {
+      const existingRecords = result[domain];
+      resolve(existingRecords);
     });
-  
-    // Check if the item already exists in any category
-    const itemExists = existingRecords.some(record =>
-      record.items.some(item => item.id === newData.id)
-    );
-  
-    if (!itemExists) {
-      // Find the existing type category
-      let typeCategory = existingRecords.find(record => record.type === newData.type);
-  
-      if (typeCategory) {
-        // Add the new item to the existing type category
-        typeCategory.items.push({ id: newData.id, name: newData.name });
-      } else {
-        // Create a new type category with the new item
-        typeCategory = {
-          type: newData.type,
-          items: [{ id: newData.id, name: newData.name }]
-        };
-        existingRecords.push(typeCategory);
-      }
-  
-      // Update the storage with the new records for the specified domain
-      chrome.storage.local.set({ [domain]: existingRecords }, () => {
-        console.log('Record list updated for domain:', domain);
+  });
+
+  // Find the existing type category
+  let typeCategory = existingRecords.find(record => record.type === newData.type);
+
+  if (typeCategory) {
+    // Optionally enforce single default
+    if (enforceSingleDefault) {
+      typeCategory.items.forEach(item => {
+        if (item.default === true) {
+          item.default = false; // Set the existing default to false
+        }
       });
-      return true;
-    } else {
-      console.log('Item already exists:', newData);
-      return false;
     }
-  };
-  
-  
+
+    // Check if the item already exists by id
+    const itemIndex = typeCategory.items.findIndex(item => item.id === newData.id);
+
+    if (itemIndex !== -1) {
+      // Update the existing item
+      typeCategory.items[itemIndex] = newData;
+      console.log('Item updated:', newData);
+    } else {
+      // Add the new item to the existing type category
+      typeCategory.items.push(newData);
+      console.log('New item added:', newData);
+    }
+  } else {
+    // Create a new type category with the new item
+    typeCategory = {
+      type: newData.type,
+      items: [newData]
+    };
+    existingRecords.push(typeCategory);
+    console.log('New type category created with item:', newData);
+  }
+
+  // Update the storage with the new records for the specified domain
+  await new Promise((resolve, reject) => {
+    chrome.storage.local.set({ [domain]: existingRecords }, () => {
+      console.log('Record list updated for domain:', domain);
+      resolve();
+    });
+  });
+
+  return true;
+};
 
 // Update Record
 export async function updateRecord(id, newData) {

@@ -7,6 +7,7 @@ import { extractValue, addToast } from "@/assets/globalUtil";
 
 import { getActionByName } from "@/assets/sfdcActions";
 import { getAccountCompositeRequest, getCreateOrderRequest, getAddItemsToCartRequest, getCustomerInteractionReq } from "@/assets/cpqActions";
+import { fetchRecords, saveRecord, fetchRecordList } from "@/assets/storageUtil";
 
 import GuidedFlow from "../elements/GuidedFlow.vue";
 import PrimaryButton from "../elements/PrimaryButton.vue";
@@ -15,6 +16,8 @@ import LoadingCircle from "../elements/LoadingCircle.vue";
 import TextDesc from "../elements/TextDesc.vue";
 import PageDescription from "../elements/PageDescription.vue";
 import PageTitle from "../elements/PageTitle.vue";
+import SVGIconButton from "../elements/SVGIconButton.vue";
+import Icon_Favorite from "@/assets/icons/Icon_Favorite.vue";
 
 import vSelect from "vue-select";
 import "vue-select/dist/vue-select.css";
@@ -25,7 +28,7 @@ import 'vue3-easy-data-table/dist/style.css';
 //faker
 import { faker } from '@faker-js/faker/locale/en_AU';
 //icons
-import { CheckIcon, UserCircleIcon, ShoppingCartIcon, SquaresPlusIcon, PaperAirplaneIcon } from '@heroicons/vue/24/solid';
+import { HeartIcon, UserCircleIcon, ShoppingCartIcon, SquaresPlusIcon, PaperAirplaneIcon } from '@heroicons/vue/24/solid';
 
 const sfHostURL = ref('');
 const orgIdentifier = ref('');
@@ -78,7 +81,7 @@ const searchValue = ref('');
 // const sortType = "desc";
 
 const headers = [
-  { text: "Action", value: "Actions", width: 130 },
+  { text: "Action", value: "Actions", width: 100 },
   { text: "Name", value: "Name", width: 250 },
   { text: "Type", value: "Product2.vlocity_cmt__Type__c", width: 150, sortable: true }, //width: 200
   { text: "Sub Type", value: "Product2.vlocity_cmt__SubType__c", width: 100, sortable: true },
@@ -288,7 +291,12 @@ const getPriceList = async () => {
       Id: record.Id,
       Name: record.Name
     }));
-    selectedPriceList.value = priceList.value[0].Id;
+    // selectedPriceList.value = priceList.value[4].Id;
+    selectedPriceList.value = await setDefaultPriceList();
+    if (selectedPriceList.value == null) {
+      selectedPriceList.value = priceList.value[0].Id;
+    }
+    console.log('getPriceList selectedPriceList --> ' + selectedPriceList.value);
     console.log('getPriceList --> ' + JSON.stringify(priceList.value));
   }
   catch (error) {
@@ -447,6 +455,42 @@ const createInteraction = async () => {
     addToast('Something has failed, please check dev console.', 'Error');
   }
   isCustInteractionBtnLoading.value = false;
+}
+
+//Save Favorites
+const saveDefaultPriceList = async () => {
+  try {
+    const getName = priceList.value.find(record => record.Id == selectedPriceList.value);
+    const priceListName = getName ? getName.Name : selectedPriceList.value;
+    const obj = {
+      type: 'priceList',
+      id: selectedPriceList.value,
+      name: priceListName,
+      default: true
+    };
+    const result = await saveRecord(obj, sfHostURL.value, true);
+    console.log('priceList save result--> ' + result);
+    addToast('Default pricelist saved to : ' + priceListName, 'Success');
+  }
+  catch (error) {
+    console.log('error --> ' + error);
+    addToast('Something failed, please check dev console', 'Error');
+  }
+}
+
+//Set Favorites
+const setDefaultPriceList = async () => {
+  const result = await fetchRecords(sfHostURL.value);
+  console.log('data --> ' + JSON.stringify(result));
+  if (result?.length > 0) {
+    const defaultItem = result[0]?.items.find(record => record.default == true);
+    selectedPriceList.value = defaultItem ? defaultItem.id : result[0]?.items[0]?.id;
+    return selectedPriceList.value;
+  }
+  else {
+    return null;
+  }
+
 }
 
 const resetStages = () => {
@@ -643,8 +687,12 @@ onMounted(async () => {
 
             <InputLabel value="Select PriceList" class="text-sm font-normal" />
             <vSelect label="Name" :options="priceList" v-model="selectedPriceList" :reduce="Name => Name.Id"
-              class="w-3/6 my-2 mr-4">
+              class="w-5/12 my-2 mr-4">
             </vSelect>
+            <PrimaryButton @click="saveDefaultPriceList">
+              <HeartIcon class="h-4 w-4 text-gray-100 dark:text-gray-500 mr-2" />
+              <p>Set Default</p>
+            </PrimaryButton>
 
             <div v-if="orderId"
               class="block w-full bg-gray-100 dark:bg-gray-700 dark:border-gray-600 my-4 p-4 rounded-md border">
@@ -689,8 +737,10 @@ onMounted(async () => {
                   <template #item-Actions="{ Id, Name, isChecked }">
                     <TextInput type="checkbox" class="my-2 ml-2 mr-2 cursor-pointer"
                       @change="toggleProductInList(Id, Name, $event.target.checked)" :checked="isChecked" />
-                    <TextInput type="number" class="my-2 !px-2 !py-1 !w-20 text-xs" placeholder="Quantity"
-                      @change="updateProductQuantity(Id, $event.target.value)" />
+                    <!-- <TextInput type="number" class="my-2 !px-2 !py-1 !w-20 text-xs" placeholder="Quantity"
+                      @change="updateProductQuantity(Id, $event.target.value)" /> -->
+                    <SVGIconButton :icon="Icon_Favorite" :isSquare="false" color="blue" class="!p-1 ml-2"
+                      title="Add to Favorite" />
                   </template>
                   <template #item-Product2ProductCode="{ Product2 }">
                     {{ Product2.ProductCode }}

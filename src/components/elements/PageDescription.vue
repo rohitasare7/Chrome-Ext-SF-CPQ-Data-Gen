@@ -5,7 +5,7 @@ defineProps({
 </script>
 
 <template>
-    <p class="mt-2 mb-2 text-gray-500 dark:text-gray-400 leading-relaxed">
+    <p class="mt-2 mb-2 text-gray-500 dark:text-gray-400 leading-relaxed text-sm">
         <slot />
     </p>
 </template>

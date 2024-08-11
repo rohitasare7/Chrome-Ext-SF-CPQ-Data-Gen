@@ -42,6 +42,18 @@ html.dark .previous-page__click-button .arrow, html.dark .next-page__click-butto
     @apply border-sky-300
 }
 
+html.dark .vs--single .vs__selected {
+    @apply dark:text-gray-300
+}
+
+html.dark .vs__dropdown-toggle {
+    @apply dark:border-gray-600
+}
+
+html.dark .vs__clear , html.dark  .vs__open-indicator {
+    @apply dark:fill-gray-500
+}
+
 
 .tableCSS {
     --easy-table-border: 1px solid #DDD;
