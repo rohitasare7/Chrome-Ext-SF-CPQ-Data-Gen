@@ -6,7 +6,7 @@ import { sfConn } from "@/assets/helper";
 import { extractValue, addToast } from "@/assets/globalUtil";
 
 import { getActionByName } from "@/assets/sfdcActions";
-import { getAccountCompositeRequest, getCreateOrderRequest, getAddItemsToCartRequest } from "@/assets/cpqActions";
+import { getAccountCompositeRequest, getCreateOrderRequest, getAddItemsToCartRequest, getCustomerInteractionReq } from "@/assets/cpqActions";
 
 import GuidedFlow from "../elements/GuidedFlow.vue";
 import PrimaryButton from "../elements/PrimaryButton.vue";
@@ -108,6 +108,7 @@ const isSubmitOrderBtnLoading = ref(false);
 const isInitDataLoaded = ref(false);
 const oneClickStatus = ref(null);
 const isOneClickBtnLoading = ref(false);
+const isCustInteractionBtnLoading = ref(false);
 //Created Data
 const createdAccList = ref([]);
 const orderId = ref('');
@@ -183,6 +184,11 @@ const generateFakerData = () => {
     BillingStreet: faker.location.streetAddress(true),
     vlocity_cmt__SubscriptionNumber__c: faker.helpers.fromRegExp(/[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}/),
     vlocity_cmt__ServiceIdentifier__c: faker.helpers.fromRegExp(/[0-9]{10}/),
+    AccountNumbers: {
+      SA: faker.helpers.fromRegExp(/[0-9]{4}/),
+      BA: faker.helpers.fromRegExp(/[0-9]{4}/),
+      CA: faker.helpers.fromRegExp(/[0-9]{4}/)
+    },
     AccountNumber: faker.helpers.fromRegExp(/[0-9]{6}/),
     vlocity_cmt__BillingEmailAddress__c: faker.internet.email({ provider: 'test.com' }),
   };
@@ -235,6 +241,7 @@ const getHttpStatusCode = (referenceId, compositeResponse) => {
   return record ? record.httpStatusCode : null;
 };
 
+//Create Blank Order
 const createOrder = async () => {
   isCreateOrderBtnLoading.value = true;
   const serviceAccId = getIdByReferenceId('refAccountSA');
@@ -308,7 +315,6 @@ const getProductList = async () => {
 }
 
 //Handle product actions
-
 const addItem = (Name, itemId, parentId, fieldsToUpdate) => {
   const newItem = {
     Name,
@@ -352,10 +358,9 @@ const updateProductQuantity = (itemId, quantity) => {
     item.fieldsToUpdate.quantity = quantity;
   }
 };
-// handle selection
 
+// Add items to cart
 const addItemsToCart = async () => {
-
   if (selectedProductList.value.length == 0) {
     addToast('Please add items to cart.', 'Error');
     return;
@@ -395,6 +400,7 @@ const addItemsToCart = async () => {
   isAddToCartBtnLoading.value = false;
 }
 
+//Submit Order
 const checkoutOrder = async () => {
   if (orderId.value == '') {
     selectedStage.value = 'create_order';
@@ -418,6 +424,31 @@ const checkoutOrder = async () => {
   isSubmitOrderBtnLoading.value = false;
 }
 
+/*
+After Order Creation Patching Data
+*/
+
+//Create Customer Interaction (Optional)
+const createInteraction = async () => {
+  isCustInteractionBtnLoading.value = true;
+  try {
+    const params = {
+      recordTypeSA: getIdByReferenceId('refAccountSA'),
+      fullName: fakerData.value.fullName,
+    };
+    const reqStr = getCustomerInteractionReq(params);
+    console.log('createInteraction reqStr --> ' + JSON.stringify(reqStr));
+    const response = await hitSFIAPI('CRUD_CompositeAPI', reqStr, null, 'POST');
+    console.log('createInteraction response --> ' + JSON.stringify(response));
+    addToast('Customer Interaction Record created.', 'Sucess');
+  }
+  catch (error) {
+    console.log('error --> ' + error);
+    addToast('Something has failed, please check dev console.', 'Error');
+  }
+  isCustInteractionBtnLoading.value = false;
+}
+
 const resetStages = () => {
   stages.value.forEach(stage => {
     stage.completed = false
@@ -438,7 +469,6 @@ const resetData = () => {
 
 //Creates all records in 1 click
 const oneClickAutomation = async () => {
-  
   if (selectedProductList.value.length == 0) {
     addToast('Please select some products from Add to cart page.', 'Error');
     selectedStage.value = 'add_to_cart';
@@ -489,6 +519,13 @@ onMounted(async () => {
   await initData();
 });
 
+/*
+// To do
+1. [Done] Add interaction : [Pending] Add Optional check on UI
+2. [Done] Contact otherPhone
+3. Assets, Order Products --> Subscription Mapping
+4. Create Contract --> Subscrption/order : [Pending] Add Optional check on UI
+*/
 </script>
 
 <template>
@@ -501,7 +538,8 @@ onMounted(async () => {
       <PageDescription>Create dummy accounts, order, add products from pricelist and submit order.</PageDescription>
       <div>
         <PrimaryButton @click="oneClickAutomation">
-          <LoadingCircle v-if="isOneClickBtnLoading" :cssStyle="'h-4 w-4 mr-2'"> {{ oneClickStatus ?? 'Loading..' }}</LoadingCircle>
+          <LoadingCircle v-if="isOneClickBtnLoading" :cssStyle="'h-4 w-4 mr-2'"> {{ oneClickStatus ?? 'Loading..' }}
+          </LoadingCircle>
           <p v-else>One Click Create</p>
         </PrimaryButton>
       </div>
@@ -605,7 +643,7 @@ onMounted(async () => {
 
             <InputLabel value="Select PriceList" class="text-sm font-normal" />
             <vSelect label="Name" :options="priceList" v-model="selectedPriceList" :reduce="Name => Name.Id"
-              class="w-40 my-2 mr-4">
+              class="w-3/6 my-2 mr-4">
             </vSelect>
 
             <div v-if="orderId"

@@ -5,7 +5,6 @@ Fields to add --> Acc : Type, SA : ShippingAddress, industry, account site, SLA,
 */
 //Create contact also
 const getAccountCompositeRequest = (params) => {
-
     const requestStr = {
         "compositeRequest": [
             {
@@ -50,13 +49,18 @@ const getAccountCompositeRequest = (params) => {
                 "body": {
                     "Name": `SA ${params.faker.fullName} ${Math.floor(Math.random() * 10)}`,
                     "RecordTypeId": `${params.recordTypeSA}`,
-                    "vlocity_cmt__Status__c": "Active",
+                    "vlocity_cmt__Status__c": "Active",  // add options later
                     "Phone": `${params.faker.phone}`,
                     "BillingCity": `${params.faker.BillingCity}`,
                     "BillingCountry": `${params.faker.BillingCountry}`,
                     "BillingPostalCode": `${params.faker.BillingPostalCode}`,
                     "BillingState": `${params.faker.BillingState}`,
                     "BillingStreet": `${params.faker.BillingStreet}`,
+                    "ShippingCity": `${params.faker.ShippingCity}`,
+                    "ShippingCountry": `${params.faker.ShippingCountry}`,
+                    "ShippingPostalCode": `${params.faker.ShippingPostalCode}`,
+                    "ShippingState": `${params.faker.ShippingState}`,
+                    "ShippingStreet": `${params.faker.ShippingStreet}`,
                     "vlocity_cmt__Active__c": "Yes",
                     "ParentId": "@{refAccountBA.id}"
                 }
@@ -69,6 +73,7 @@ const getAccountCompositeRequest = (params) => {
                     "FirstName": `${params.faker.firstName}`,
                     "LastName": `${params.faker.lastName}`,
                     "Phone": `${params.faker.phone}`,
+                    "OtherPhone" : `${params.faker.phone}`,
                     "Email": `${params.faker.vlocity_cmt__BillingEmailAddress__c}`,
                     "MailingCity": `${params.faker.BillingCity}`,
                     "MailingCountry": `${params.faker.BillingCountry}`,
@@ -95,9 +100,7 @@ const getAccountCompositeRequest = (params) => {
         ],
         "allOrNone": true
     };
-
     return requestStr;
-
 }
 
 const getCreateOrderRequest = (params) => {
@@ -107,13 +110,13 @@ const getCreateOrderRequest = (params) => {
         "objectType": "Order",
         "inputFields": [
             {
-                "effectivedate": `${today.toLocaleDateString("en-US")}`
+                "effectivedate": `${today.toLocaleDateString("en-US")}`  // add options later
             },
             {
-                "status": "Draft"
+                "status": "Draft"  // add options later
             },
             {
-                "Name": "Headless CPQ Order"
+                "Name": "Headless CPQ Order"  // add options later
             },
             {
                 "vlocity_cmt__PriceListId__c": `${params.priceListId}`
@@ -145,6 +148,28 @@ const getAddItemsToCartRequest = (params) => {
     return requestStr;
 }
 
+const getCustomerInteractionReq = (params) => {
+    const requestStr = {
+        "compositeRequest": [
+            {
+                "method": "POST",
+                "url": `/services/data/v${apiVersion}/sobjects/vlocity_cmt__CustomerInteraction__c`,
+                "referenceId": "refCustInteraction",
+                "body": {
+                    "Name": `Int for ${params.fullName}`,
+                    "vlocity_cmt__Channel__c" : "Agent",
+                    "vlocity_cmt__Comments__c" : "Sample comment, this record was created automatically.",
+                    "vlocity_cmt__AccountId__c": `${params.recordTypeSA}`,
+                    "vlocity_cmt__ContactId__c": "Active",
+                    "vlocity_cmt__Status__c": `Completed`, // add options later
+                    "vlocity_cmt__Type__c": `Call`, // add options later
+                    "vlocity_cmt__Verified__c": true
+                }
+            },
+        ]
+    };
+    return requestStr;
+}
 
 // Export the getActionByName function
-export { getAccountCompositeRequest, getCreateOrderRequest, getAddItemsToCartRequest };
+export { getAccountCompositeRequest, getCreateOrderRequest, getAddItemsToCartRequest, getCustomerInteractionReq };
