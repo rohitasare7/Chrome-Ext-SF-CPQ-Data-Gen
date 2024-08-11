@@ -66,6 +66,13 @@ const actionList = [
         contentType: 'application/json',
         responeType: 'json',
     },
+    {
+        name: 'CRUD_CompositeSobjects',
+        uri: `/services/data/v${apiVersion}/composite/sobjects`,
+        method: 'PATCH',
+        contentType: 'application/json',
+        responeType: 'json',
+    },
     /*
     Add logic to check pricebook + pricelist to filter products
     */

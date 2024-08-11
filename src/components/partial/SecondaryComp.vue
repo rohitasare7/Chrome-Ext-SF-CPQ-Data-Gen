@@ -6,7 +6,14 @@ import { sfConn } from "@/assets/helper";
 import { extractValue, addToast } from "@/assets/globalUtil";
 
 import { getActionByName } from "@/assets/sfdcActions";
-import { getAccountCompositeRequest, getCreateOrderRequest, getAddItemsToCartRequest, getCustomerInteractionReq, getAssetOrderItems } from "@/assets/cpqActions";
+import {
+  getAccountCompositeRequest,
+  getCreateOrderRequest,
+  getAddItemsToCartRequest,
+  getCustomerInteractionReq,
+  getAssetOrderItems,
+  getPostJobRecordFixRequest
+} from "@/assets/cpqActions";
 import { fetchRecords, saveRecord, fetchRecordList } from "@/assets/storageUtil";
 
 import GuidedFlow from "../elements/GuidedFlow.vue";
@@ -35,7 +42,7 @@ const orgIdentifier = ref('');
 const pageTitle = 'CPQ Test Data Generator';
 
 const hitSFIAPI = (sfdcAction, reqBody, recordId, method) => {
-  console.log('inside');
+
   let url;
   const sfdcActionItem = getActionByName(sfdcAction);
   console.log('sfdcActionItem --> ' + sfdcActionItem.uri);
@@ -49,7 +56,7 @@ const hitSFIAPI = (sfdcAction, reqBody, recordId, method) => {
     method: method ?? 'GET', // Use POST method for creating
     body: reqBody ? reqBody : {}, // Pass the payload
   }
-  console.log('post req body --> ' + JSON.stringify(obj));
+  // console.log('post req body --> ' + JSON.stringify(obj));
   return new Promise((resolve, reject) => {
     sfConn
       .getSession(sfHostURL.value)
@@ -258,7 +265,7 @@ const createOrder = async () => {
   try {
     const params = {
       accId: serviceAccId,
-      billingAccountId : billingAccId,
+      billingAccountId: billingAccId,
       priceListId: selectedPriceList.value
     }
     const reqStr = getCreateOrderRequest(params);
@@ -436,37 +443,90 @@ const checkoutOrder = async () => {
 
 /*
 After Order Creation Patching Data
+--> Update Assets, Order Items, 
+--> Create Customer Interaction
 */
 
-//Create Customer Interaction (Optional)
-const createInteraction = async () => {
-  isCustInteractionBtnLoading.value = true;
+const assetList = ref([]);
+const orderItemList = ref([]);
+//Patch Assets, Order Items, Create Interaction Record
+const patchRecordsPostOrder = async () => {
+  const params = {
+    serviceAccId: getIdByReferenceId('refAccountSA'),
+    fullName: fakerData.value.fullName,
+    contactId: getIdByReferenceId('refContact'),
+  };
+  const reqStr = getAssetOrderItems(params);
+  //get Asset, Order Items Records, Create Customer Interaction Record.
+  const response = await hitSFIAPI('CRUD_CompositeAPI', reqStr, null, 'POST');
+  assetList.value = getCompRespDataByRefId('refAssetList', response?.compositeResponse);
+  orderItemList.value = getCompRespDataByRefId('refOrderItemtList', response?.compositeResponse);
+  // console.log('assetList.value --> ' + JSON.stringify(assetList.value));
+  // console.log('orderItemList.value --> ' + JSON.stringify(orderItemList.value));
+  await updateRecordsBulk();
+}
+
+const createAssetObj = (id, serviceId, subscriptionId, orderId) => {
+  return {
+    "attributes": { "type": "Asset" },
+    "id": id,
+    "vlocity_cmt__ServiceIdentifier__c": serviceId,
+    "vlocity_cmt__SubscriptionId__c": subscriptionId,
+    "vlocity_cmt__OrderId__c": orderId,
+    "Status": "Active"
+  };
+};
+
+const createOrderItemObj = (id, serviceId, subscriptionId, billingId) => {
+  return {
+    "attributes": { "type": "Asset" },
+    "id": id,
+    "vlocity_cmt__BillingAccountId__c": billingId,
+    "vlocity_cmt__SubscriptionId__c": subscriptionId,
+    "vlocity_cmt__ServiceIdentifier__c": serviceId
+  };
+};
+
+const updateRecordsBulk = async () => {
   try {
-    const params = {
-      recordTypeSA: getIdByReferenceId('refAccountSA'),
-      fullName: fakerData.value.fullName,
-    };
-    const reqStr = getCustomerInteractionReq(params);
-    console.log('createInteraction reqStr --> ' + JSON.stringify(reqStr));
-    const response = await hitSFIAPI('CRUD_CompositeAPI', reqStr, null, 'POST');
-    console.log('createInteraction response --> ' + JSON.stringify(response));
-    addToast('Customer Interaction Record created.', 'Sucess');
+    const serviceId = fakerData.value.vlocity_cmt__ServiceIdentifier__c;
+    const biillingAccId = getIdByReferenceId('refAccountBA');
+    const subscriptionId = getIdByReferenceId('refSubscription');
+
+    //Create Asset Records Composite Req
+    const assetReq = assetList.value.map(Id => {
+      return createAssetObj(Id, serviceId, subscriptionId, orderId.value);
+    });
+    //Create Order Item Records Composite Req
+    const orderItemReq = assetList.value.map(Id => {
+      return createOrderItemObj(Id, serviceId, subscriptionId, biillingAccId);
+    });
+
+    const recordList = [...assetReq, ...orderItemReq];
+
+    const params = getPostJobRecordFixRequest(recordList);
+    console.log('CRUD_CompositeSobjects request --> ' + JSON.stringify(params));
+    const response = await hitSFIAPI('CRUD_CompositeSobjects', params, null, 'PATCH');
+    console.log('CRUD_CompositeSobjects response --> ' + JSON.stringify(response));
+    addToast('Assets, Order Items patched successfully', 'Success');
   }
   catch (error) {
     console.log('error --> ' + error);
-    addToast('Something has failed, please check dev console.', 'Error');
+    addToast('Something had failed, please check dev console', 'Error');
   }
-  isCustInteractionBtnLoading.value = false;
 }
 
-const getAssetList = async () => {
-  const params = {
-    serviceAccId: '001Og000006TgutIAC' //getIdByReferenceId('refAccountSA'),
-    };
-  const reqStr = getAssetOrderItems(params);
-  const response = await hitSFIAPI('CRUD_CompositeAPI', reqStr, null, 'POST');
-    console.log('getAssetList response --> ' + JSON.stringify(response));
-} 
+const getCompRespDataByRefId = (referenceId, compositeResponse) => {
+  const record = compositeResponse.find(item => item.referenceId === referenceId);
+  if (record?.httpStatusCode === 200) {
+    const records = record?.body?.records || [];
+    return records.map(rec => rec.Id);
+  }
+  else {
+    return [];
+  }
+
+};
 
 //Save Favorites
 const saveDefaultPriceList = async () => {
@@ -535,11 +595,16 @@ const oneClickAutomation = async () => {
       oneClickStatus.value = 'Creating Accounts..';
       await createAccountRecords();
       oneClickStatus.value = 'Creating Order..';
+      selectedStage.value = 'create_order';
       await createOrder();
       oneClickStatus.value = 'Adding items to Order..';
+      selectedStage.value = 'add_to_cart';
       await addItemsToCart();
       oneClickStatus.value = 'Submitting Order..';
+      selectedStage.value = 'submit_order';
       await checkoutOrder();
+      oneClickStatus.value = 'Patching Assets, Order Items..';
+      await patchRecordsPostOrder();
       oneClickStatus.value = null;
       isOneClickBtnLoading.value = false;
     }
@@ -578,15 +643,12 @@ onMounted(async () => {
 // To do
 1. [Done] Add interaction : [Pending] Add Optional check on UI
 2. [Done] Contact otherPhone
-3. Assets, Order Products --> Subscription Mapping
-4. Create Contract --> Subscrption/order : [Pending] Add Optional check on UI
+3. [Done] Assets, Order Products --> Subscription Mapping
+4. [Pending] Create Contract --> Subscrption/order : [Pending] Add Optional check on UI
 */
 </script>
 
 <template>
-  <PrimaryButton @click="getAssetList">
-    Fetch Asset List
-  </PrimaryButton>
   <!-- Init Main Page -->
   <TextDesc v-if="sfHostURL" class="mt-2 mb-4">Current Org : {{ sfHostURL }}</TextDesc>
 
@@ -802,6 +864,11 @@ onMounted(async () => {
               <a :href="`https://${sfHostURL}/lightning/r/Order/${orderId}/view`" target="_blank"
                 class="text-blue-700 dark:text-blue-100  hover:text-blue-800 font-semibold text-sm mb-2 mt-4 block w-full">
                 Open Order in SF</a>
+              <!-- <p class="text-sm text-gray-600 dark:text-gray-300 mt-4">You can patch Assets, Order Items and create
+                Interaction Records by clicking below button (If patching al)</p>
+              <PrimaryButton @click="patchRecordsPostOrder" class="mt-4">
+                Patch Records
+              </PrimaryButton> -->
             </div>
             <div class="w-full mr-3 lg:w-1/2" v-if="selectedProductList.length > 0">
               <InputLabel :value="orderNumber ? 'Selected Products for Order : ' + orderNumber : 'Selected Products'"
@@ -824,7 +891,9 @@ onMounted(async () => {
               <p class="text-sm text-gray-600 dark:text-gray-300 mt-4">After adding your products to cart/order, you can
                 finally
                 submit the order for fulfilment.</p>
+
             </div>
+
             <div v-else>
 
               <PrimaryButton @click="resetData">

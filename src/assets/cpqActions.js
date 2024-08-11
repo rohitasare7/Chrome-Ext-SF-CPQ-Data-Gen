@@ -194,15 +194,30 @@ const getAssetOrderItems = (params) => {
                 "url": `/services/data/v${apiVersion}/query/?q=SELECT Id FROM OrderItem WHERE vlocity_cmt__ServiceAccountId__c ='${params.serviceAccId}'`,
                 "referenceId": "refOrderItemtList",
             },
+            {
+                "method": "POST",
+                "url": `/services/data/v${apiVersion}/sobjects/vlocity_cmt__CustomerInteraction__c`,
+                "referenceId": "refCustInteraction",
+                "body": {
+                    "Name": `Int for ${params.fullName}`,
+                    "vlocity_cmt__Channel__c": "Agent", // add options later
+                    "vlocity_cmt__Comments__c": "Sample comment, this record was created automatically.",
+                    "vlocity_cmt__AccountId__c": `${params.serviceAccId}`,
+                    "vlocity_cmt__ContactId__c": `${params.contactId}`,
+                    "vlocity_cmt__Status__c": `Completed`, // add options later
+                    "vlocity_cmt__Type__c": `Call`, // add options later
+                    "vlocity_cmt__Verified__c": true
+                }
+            },
         ]
     };
     return requestStr;
 }
 
-const getPostJobRecordFixRequest = (params) => {
+const getPostJobRecordFixRequest = (recordList) => {
     const requestStr = {
-        "allOrNone": false,
-        "records": params.recordList
+        "allOrNone": true,
+        "records": recordList
     }
     return requestStr;
 }
