@@ -397,11 +397,15 @@ const updateProductQuantity = (itemId, quantity) => {
 
 // Add items to cart
 const addItemsToCart = async () => {
-  if (selectedProductList.value.length == 0) {
+  if (isOrderSubmitted.value) {
+    addToast('Order is submitted hence can\'t add products anymore.', 'Error');
+    return;
+  }
+  else if (selectedProductList.value.length == 0) {
     addToast('Please add items to cart.', 'Error');
     return;
   }
-  else if (orderId.value == '') {
+  else if (orderId.value == '' || orderId.value == null) {
     selectedStage.value = 'create_order';
     addToast('Please create order first.', 'Error');
     return;
@@ -426,8 +430,17 @@ const addItemsToCart = async () => {
     console.log('addItemsToCart reqStr --> ' + JSON.stringify(reqStr));
     const response = await hitSFIAPI('CPQ_AddItemsToCart', reqStr, orderId.value, 'POST');
     console.log('addItemsToCart response --> ' + JSON.stringify(response));
-    updateStageCompletion('add_to_cart');
-    addToast('Selected Items added to cart.', 'Sucess');
+    if (response?.messages.length > 0 && response?.messages[0].code == "109") {
+      addToast('Add to cart failed, please refresh and try again with new data', 'Error');
+      addToast(response?.messages[0].message, 'Error');
+      isAddToCartBtnLoading.value = false;
+      return;
+    }
+    else {
+      updateStageCompletion('add_to_cart');
+      addToast('Selected Items added to cart.', 'Sucess');
+    }
+
   }
   catch (error) {
     console.log('error --> ' + error);
@@ -710,8 +723,8 @@ onMounted(async () => {
 
   <div class="flex justify-center text-center">
     <div class="flex flex-col">
-      <PageTitle>Test Data Generator</PageTitle>
-      <PageDescription>Create dummy accounts, order, add products from pricelist and submit order.</PageDescription>
+      <PageTitle>Vlocity CPQ Test Data Generator</PageTitle>
+      <PageDescription>Create accounts, order, add products from pricelist and submit order.</PageDescription>
       <div>
         <PrimaryButton @click="oneClickAutomation" :isBlue=true>
           <LoadingCircle v-if="isOneClickBtnLoading" :cssStyle="'h-4 w-4 mr-2'"> {{ oneClickStatus ?? 'Loading..' }}

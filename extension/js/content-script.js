@@ -49,7 +49,7 @@ function createButton() {
     position: 'relative',
     color: '#fff',
     borderRadius: '1rem',
-    backgroundImage: 'linear-gradient(-225deg, rgb(55, 0, 180) 0%, rgb(255, 255, 255) 56%, rgb(158, 0, 82) 100%)',
+    backgroundImage: 'linear-gradient(-225deg, rgb(158, 0, 82) 0%, rgb(255, 255, 255) 56%, rgb(219, 13, 120) 100%)',
     backgroundSize: '400%',
     backgroundPosition: '0% 0%',
     border: 'none',
