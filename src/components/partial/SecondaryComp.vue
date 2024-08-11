@@ -1,6 +1,5 @@
 <script setup>
 /*global chrome*/
-
 import { ref, onMounted } from "vue";
 import { sfConn } from "@/assets/helper";
 import { extractValue, addToast } from "@/assets/globalUtil";
@@ -121,7 +120,7 @@ const isSubmitOrderBtnLoading = ref(false);
 const isInitDataLoaded = ref(false);
 const oneClickStatus = ref(null);
 const isOneClickBtnLoading = ref(false);
-const isCustInteractionBtnLoading = ref(false);
+const isRecordPatchingDone = ref(false);
 //Created Data
 const createdAccList = ref([]);
 const orderId = ref('');
@@ -519,6 +518,10 @@ const createOrderItemObj = (id, serviceId, subscriptionId, billingId) => {
   };
 };
 
+//Process Records in Bulk for patching with retry
+let retryCount = 0;
+const maxRetries = 5;
+
 const updateRecordsBulk = async () => {
   try {
     const serviceId = fakerData.value.vlocity_cmt__ServiceIdentifier__c;
@@ -535,17 +538,34 @@ const updateRecordsBulk = async () => {
     });
 
     const recordList = [...assetReq, ...orderItemReq];
-
-    const params = getPostJobRecordFixRequest(recordList);
-    console.log('CRUD_CompositeSobjects request --> ' + JSON.stringify(params));
-    const response = await hitSFIAPI('CRUD_CompositeSobjects', params, null, 'PATCH');
-    console.log('CRUD_CompositeSobjects response --> ' + JSON.stringify(response));
-    addToast('Assets, Order Items patched successfully', 'Success');
+    if (recordList.length > 0) {
+      await initRecordsPatching(recordList);
+    }
+    else if (retryCount < maxRetries) {
+      retryCount++;
+      setTimeout(async () => {
+        await patchRecordsPostOrder();
+      }, 5000);
+      addToast(`Retrying record patching in 5 Seconds... Attempt ${retryCount} of ${maxRetries}`, 'Success');
+    } else {
+      isRecordPatchingDone.value = false;
+      addToast('Max retry attempts reached. Please patch manually.', 'Error');
+    }
   }
   catch (error) {
     console.log('error --> ' + error);
     addToast('Something had failed, please check dev console', 'Error');
+    isRecordPatchingDone.value = false;
   }
+}
+
+const initRecordsPatching = async (recordList) => {
+  const params = getPostJobRecordFixRequest(recordList);
+  console.log('CRUD_CompositeSobjects request --> ' + JSON.stringify(params));
+  const response = await hitSFIAPI('CRUD_CompositeSobjects', params, null, 'PATCH');
+  console.log('CRUD_CompositeSobjects response --> ' + JSON.stringify(response));
+  addToast('Assets, Order Items patched successfully', 'Success');
+  isRecordPatchingDone.value = true;
 }
 
 const getCompRespDataByRefId = (referenceId, compositeResponse) => {
@@ -648,11 +668,18 @@ const resetData = () => {
   orderId.value = '';
   orderNumber.value = '';
   isOrderSubmitted.value = false;
+  isRecordPatchingDone.value = false;
   selectedStage.value = 'random_data';
+  assetList.value = [];
+  orderItemList.value = [];
 }
 
 //Creates all records in 1 click
 const oneClickAutomation = async () => {
+  if (isInitDataLoaded.value) {
+    addToast('Please let the data initialize first then proceed.', 'Error');
+    return;
+  }
   if (selectedProductList.value.length == 0) {
     addToast('Please select some products from Add to cart page.', 'Error');
     selectedStage.value = 'add_to_cart';
@@ -714,6 +741,7 @@ onMounted(async () => {
 2. [Done] Contact otherPhone
 3. [Done] Assets, Order Products --> Subscription Mapping
 4. [Pending] Create Contract --> Subscrption/order : [Pending] Add Optional check on UI
+5. [Pending] Add vlocity_cmt__Premises__c in 1st step
 */
 </script>
 
@@ -949,11 +977,13 @@ onMounted(async () => {
               <a :href="`https://${sfHostURL}/lightning/r/Order/${orderId}/view`" target="_blank"
                 class="text-blue-700 dark:text-blue-100  hover:text-blue-800 font-semibold text-sm mb-2 mt-4 block w-full">
                 Open Order in SF</a>
-              <!-- <p class="text-sm text-gray-600 dark:text-gray-300 mt-4">You can patch Assets, Order Items and create
-                Interaction Records by clicking below button (If patching al)</p>
-              <PrimaryButton @click="patchRecordsPostOrder" class="mt-4">
-                Patch Records
-              </PrimaryButton> -->
+              <div v-if="!isRecordPatchingDone" class="mt-4">
+                <p class="text-sm text-gray-600 dark:text-gray-300">You can patch Assets, Order Items and create
+                  Interaction Records by clicking below button (Once order is activated).</p>
+                <PrimaryButton @click="patchRecordsPostOrder" class="mt-4">
+                  Patch Records
+                </PrimaryButton>
+              </div>
             </div>
             <div class="w-full mr-3 lg:w-1/2" v-if="selectedProductList.length > 0">
               <InputLabel :value="orderNumber ? 'Selected Products for Order : ' + orderNumber : 'Selected Products'"

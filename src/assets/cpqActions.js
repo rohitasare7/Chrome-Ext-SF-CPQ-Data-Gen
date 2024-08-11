@@ -59,11 +59,11 @@ const getAccountCompositeRequest = (params) => {
                     "BillingPostalCode": `${params.faker.BillingPostalCode}`,
                     "BillingState": `${params.faker.BillingState}`,
                     "BillingStreet": `${params.faker.BillingStreet}`,
-                    "ShippingCity": `${params.faker.ShippingCity}`,
-                    "ShippingCountry": `${params.faker.ShippingCountry}`,
-                    "ShippingPostalCode": `${params.faker.ShippingPostalCode}`,
-                    "ShippingState": `${params.faker.ShippingState}`,
-                    "ShippingStreet": `${params.faker.ShippingStreet}`,
+                    "ShippingCity": `${params.faker.BillingCity}`,
+                    "ShippingCountry": `${params.faker.BillingCountry}`,
+                    "ShippingPostalCode": `${params.faker.BillingPostalCode}`,
+                    "ShippingState": `${params.faker.BillingState}`,
+                    "ShippingStreet": `${params.faker.BillingStreet}`,
                     "vlocity_cmt__Active__c": "Yes",
                     "ParentId": "@{refAccountBA.id}"
                 }
