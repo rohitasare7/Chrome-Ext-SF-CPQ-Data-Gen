@@ -22,6 +22,7 @@ import LoadingCircle from "../elements/LoadingCircle.vue";
 import TextDesc from "../elements/TextDesc.vue";
 import PageDescription from "../elements/PageDescription.vue";
 import PageTitle from "../elements/PageTitle.vue";
+import InputLabel from "../elements/InputLabel.vue";
 import SVGIconButton from "../elements/SVGIconButton.vue";
 import Icon_Favorite from "@/assets/icons/Icon_Favorite.vue";
 
@@ -34,7 +35,10 @@ import 'vue3-easy-data-table/dist/style.css';
 //faker
 import { faker } from '@faker-js/faker/locale/en_AU';
 //icons
-import { HeartIcon, UserCircleIcon, ShoppingCartIcon, SquaresPlusIcon, PaperAirplaneIcon, ArrowPathIcon, BoltIcon } from '@heroicons/vue/24/solid';
+import {
+  HeartIcon, UserCircleIcon, ShoppingCartIcon, SquaresPlusIcon,
+  PaperAirplaneIcon, ArrowPathIcon, BoltIcon, UsersIcon, ArrowRightCircleIcon
+} from '@heroicons/vue/24/solid';
 
 const sfHostURL = ref('');
 const orgIdentifier = ref('');
@@ -83,8 +87,8 @@ const hitSFIAPI = (sfdcAction, reqBody, recordId, method) => {
 const searchField = ['Product2.ProductCode', 'Name', 'Product2.vlocity_cmt__Type__c', 'Product2.vlocity_cmt__SubType__c'];
 const searchValue = ref('');
 
-// const sortBy = "StartTime";
-// const sortType = "desc";
+const sortBy = "isChecked";
+const sortType = "desc";
 
 const headers = [
   { text: "Action", value: "Actions", width: 100 },
@@ -194,11 +198,10 @@ const generateFakerData = () => {
     vlocity_cmt__SubscriptionNumber__c: faker.helpers.fromRegExp(/[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}/),
     vlocity_cmt__ServiceIdentifier__c: faker.helpers.fromRegExp(/[0-9]{10}/),
     AccountNumbers: {
-      SA: faker.helpers.fromRegExp(/[0-9]{4}/),
-      BA: faker.helpers.fromRegExp(/[0-9]{4}/),
-      CA: faker.helpers.fromRegExp(/[0-9]{4}/)
+      SA: faker.helpers.fromRegExp(/[0-9]{6}/),
+      BA: faker.helpers.fromRegExp(/[0-9]{6}/),
+      CA: faker.helpers.fromRegExp(/[0-9]{6}/)
     },
-    AccountNumber: faker.helpers.fromRegExp(/[0-9]{6}/),
     vlocity_cmt__BillingEmailAddress__c: faker.internet.email({ provider: 'test.com' }),
   };
 }
@@ -361,13 +364,14 @@ const addItem = (Name, itemId, parentId, fieldsToUpdate) => {
   }
 };
 
-const removeItem = (itemId) => {
+const removeItem = async (itemId) => {
   selectedProductList.value = selectedProductList.value.filter(item => item.itemId !== itemId);
   const item = productList.value.find(item => item.Id === itemId);
   if (item) {
     item.isChecked = false;
+    await deleteRecord(itemId, sfHostURL.value);
   }
-  deleteRecord(itemId, sfHostURL.value);
+
 };
 
 const resetSelectedProducts = () => {
@@ -375,12 +379,12 @@ const resetSelectedProducts = () => {
   productList.value = productList.value.map(item => ({ ...item, isChecked: false }));
 }
 
-const toggleProductInList = (itemId, Name, isChecked) => {
+const toggleProductInList = async (itemId, Name, isChecked) => {
   console.log('inside' + itemId + ' | ' + Name + '  |  ' + isChecked);
   if (isChecked) {
     addItem(Name, itemId, itemId, { quantity: 1 }); // Default quantity is 1
   } else {
-    removeItem(itemId);
+    await removeItem(itemId);
   }
 };
 
@@ -781,7 +785,9 @@ onMounted(async () => {
                 <LoadingCircle v-if="isAccountBtnLoading" :cssStyle="'h-4 w-4 mr-2'">Creating data...</LoadingCircle>
                 <LoadingCircle v-else-if="isInitDataLoaded" :cssStyle="'h-4 w-4 mr-2'">Initializing required data...
                 </LoadingCircle>
-                <p v-else>Create Accounts</p>
+                <div v-else class="flex justify-between">
+                  <UsersIcon class="h-4 w-4 text-gray-100 dark:text-gray-500 mr-2" /> Create Accounts
+                </div>
               </PrimaryButton>
               <p v-if="createdAccList.length == 0" class="text-sm text-gray-600 dark:text-gray-300 mt-4">Click above
                 button to create records for <br />Consumer Account > Billing Account > Service Account (as Hierarchy)
@@ -823,14 +829,16 @@ onMounted(async () => {
           class="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4">
           <div class="w-full mr-3 lg:w-4/6">
 
-            <InputLabel value="Select PriceList" class="text-sm font-normal" />
-            <vSelect label="Name" :options="priceList" v-model="selectedPriceList" :reduce="Name => Name.Id"
-              class="w-5/12 my-2 mr-4">
-            </vSelect>
-            <PrimaryButton @click="saveDefaultPriceList">
-              <HeartIcon class="h-4 w-4 text-gray-100 dark:text-gray-500 mr-2" />
-              <p>Set Default</p>
-            </PrimaryButton>
+            <InputLabel value="Select Price List" class="text-sm font-normal" />
+            <div class="flex justify-start my-2">
+              <vSelect label="Name" :options="priceList" v-model="selectedPriceList" :reduce="Name => Name.Id"
+                class="w-5/12 mr-4">
+              </vSelect>
+              <PrimaryButton @click="saveDefaultPriceList">
+                <HeartIcon class="h-4 w-4 text-gray-100 dark:text-gray-500 mr-2" />
+                <p>Set Default</p>
+              </PrimaryButton>
+            </div>
 
             <div v-if="orderId"
               class="block w-full bg-gray-100 dark:bg-gray-700 dark:border-gray-600 my-4 p-4 rounded-md border">
@@ -847,7 +855,9 @@ onMounted(async () => {
               <PrimaryButton class="mr-2" @click="createOrder">
                 <LoadingCircle v-if="isCreateOrderBtnLoading" :cssStyle="'h-4 w-4 mr-2'">Creating order...
                 </LoadingCircle>
-                <p v-else>Create Order</p>
+                <div v-else class="flex justify-between">
+                  <ShoppingCartIcon class="h-4 w-4 text-gray-100 dark:text-gray-500 mr-2" /> Create Order
+                </div>
               </PrimaryButton>
               <p class="text-sm text-gray-600 dark:text-gray-300 mt-4">Once your accounts are created, you can proceed
                 to create order and then add items later.</p>
@@ -878,7 +888,7 @@ onMounted(async () => {
                     <!-- <TextInput type="number" class="my-2 !px-2 !py-1 !w-20 text-xs" placeholder="Quantity"
                       @change="updateProductQuantity(Id, $event.target.value)" /> -->
                     <SVGIconButton @click="saveDefaultProduct(Id, Name)" :icon="Icon_Favorite" :isSquare="false"
-                      color="blue" class="!p-1 ml-2" title="Add to Favorite" />
+                      color="gray" class="!p-1 ml-2" title="Add to Favorite" />
                   </template>
                   <template #item-Product2ProductCode="{ Product2 }">
                     {{ Product2.ProductCode }}
@@ -888,11 +898,16 @@ onMounted(async () => {
 
               <div class="w-full mr-3 lg:w-2/6" v-if="selectedProductList.length > 0">
                 <InputLabel value="Selected Products" />
-                <PrimaryButton class="mr-2 my-4" @click="addItemsToCart">
-                  <LoadingCircle v-if="isAddToCartBtnLoading" :cssStyle="'h-4 w-4 mr-2'">Adding items...</LoadingCircle>
-                  <p v-else>Add Items to Cart</p>
-                </PrimaryButton>
-                <PrimaryButton class="mr-2 my-4" :isRed=true @click="resetSelectedProducts">Reset</PrimaryButton>
+
+                <div class="flex justify-start">
+                  <PrimaryButton class="mr-2 my-4" @click="addItemsToCart">
+                    <LoadingCircle v-if="isAddToCartBtnLoading" :cssStyle="'h-4 w-4 mr-2'">Adding items...
+                    </LoadingCircle>
+                    <p v-else>Add Items to Cart</p>
+                  </PrimaryButton>
+                  <PrimaryButton class="mr-2 my-4" :isRed=true @click="resetSelectedProducts">Reset</PrimaryButton>
+                </div>
+
                 <Vue3EasyDataTable :headers="selectedTableHeaders" :items="selectedProductList"
                   :search-field="searchField" :rows-per-page="12" header-text-direction="center"
                   :search-value="searchValue" :no-hover="true" :theme-color="'#312e3d'"
@@ -914,7 +929,7 @@ onMounted(async () => {
           class="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4">
           <div class="w-full mr-3 lg:w-4/6">
             <div v-if="isOrderSubmitted"
-              class="block w-full bg-gray-100 dark:bg-gray-700 dark:border-gray-600 my-4 p-4 rounded-md border">
+              class="block w-full bg-gray-100 dark:bg-gray-700 dark:border-gray-600 mb-4 p-4 rounded-md border">
               <p class="text-sm text-gray-600 dark:text-gray-300">Order : {{ orderNumber }} has been submitted, you can
                 check it
                 in your org by visiting below link for further fulfilment..</p>
@@ -943,7 +958,9 @@ onMounted(async () => {
               <PrimaryButton @click="checkoutOrder">
                 <LoadingCircle v-if="isSubmitOrderBtnLoading" :cssStyle="'h-4 w-4 mr-2'">Submitting Order...
                 </LoadingCircle>
-                <p v-else>Checkout Order</p>
+                <div v-else class="flex justify-between">
+                  <ArrowRightCircleIcon class="h-4 w-4 text-gray-100 dark:text-gray-500 mr-2" /> Checkout Order
+                </div>
               </PrimaryButton>
               <p class="text-sm text-gray-600 dark:text-gray-300 mt-4">After adding your products to cart/order, you can
                 finally
