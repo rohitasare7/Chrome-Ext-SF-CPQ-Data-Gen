@@ -336,7 +336,8 @@ const getProductList = async () => {
         ...item,
         isChecked
       };
-    });
+    })
+      .sort((a, b) => b.isChecked - a.isChecked);
 
     console.log('productList --> ' + JSON.stringify(productList.value));
   }
@@ -742,6 +743,7 @@ onMounted(async () => {
 3. [Done] Assets, Order Products --> Subscription Mapping
 4. [Pending] Create Contract --> Subscrption/order : [Pending] Add Optional check on UI
 5. [Pending] Add vlocity_cmt__Premises__c in 1st step
+6. [Pending] Account fields --> SLA, Customer Priority, Contact Preference, Premises
 */
 </script>
 
