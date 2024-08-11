@@ -13,7 +13,7 @@ import {
   getAssetOrderItems,
   getPostJobRecordFixRequest
 } from "@/assets/cpqActions";
-import { fetchRecords, saveRecord } from "@/assets/storageUtil";
+import { fetchRecords, saveRecord, deleteRecord } from "@/assets/storageUtil";
 
 import GuidedFlow from "../elements/GuidedFlow.vue";
 import PrimaryButton from "../elements/PrimaryButton.vue";
@@ -318,9 +318,24 @@ const getPriceList = async () => {
 const getProductList = async () => {
   try {
     const response = await hitSFIAPI('Query_PriceBookEntryList', null, null, 'GET');
-    // console.log('response --> ' + JSON.stringify(response));
-    // productList.value = response?.records;
-    productList.value = response?.records.map(item => ({ ...item, isChecked: false }));
+
+    // productList.value = response?.records.map(item => ({ ...item, isChecked: false }));
+    const favProductList = await setFavProducts();
+    console.log('favProductList --> ' + JSON.stringify(favProductList));
+    productList.value = response?.records.map(item => {
+      const isChecked = favProductList.includes(item.Id);
+
+      // If isChecked is true, call toggleProductInList
+      if (isChecked) {
+        toggleProductInList(item.Id, item.Name, true);
+      }
+
+      return {
+        ...item,
+        isChecked
+      };
+    });
+
     console.log('productList --> ' + JSON.stringify(productList.value));
   }
   catch (error) {
@@ -352,6 +367,7 @@ const removeItem = (itemId) => {
   if (item) {
     item.isChecked = false;
   }
+  deleteRecord(itemId, sfHostURL.value);
 };
 
 const resetSelectedProducts = () => {
@@ -567,20 +583,38 @@ const saveDefaultProduct = async (Id, Name) => {
   }
 }
 
-//Set Favorites
+//Set Favorite PriceList
 const setDefaultPriceList = async () => {
   const result = await fetchRecords(sfHostURL.value);
-  console.log('data --> ' + JSON.stringify(result));
   if (result?.length > 0) {
-    const defaultItem = result[0]?.items.find(record => record.default == true);
-    selectedPriceList.value = defaultItem ? defaultItem.id : result[0]?.items[0]?.id;
-    return selectedPriceList.value;
+    // Filter the result to only include items where type is "priceList"
+    const priceList = result.find(record => record.type === "priceList");
+    if (priceList && priceList.items.length > 0) {
+      // Find the default item within the filtered priceList items
+      const defaultItem = priceList.items.find(item => item.default === true);
+      selectedPriceList.value = defaultItem ? defaultItem?.id : priceList?.items[0]?.id;
+      return selectedPriceList.value;
+    }
   }
-  else {
-    return null;
-  }
+  return null;
+};
 
-}
+//Set Favorite Products
+const setFavProducts = async () => {
+  const result = await fetchRecords(sfHostURL.value);
+  const selectedProducts = [];
+  if (result?.length > 0) {
+    // Find the record where type is "productList"
+    const productList = result.find(record => record.type === "productList");
+
+    if (productList && productList.items.length > 0) {
+      // Map through the items and extract the ids
+      selectedProducts.push(...productList.items.map(item => item.id));
+    }
+  }
+  console.log('selectedProducts --> ' + JSON.stringify(selectedProducts));
+  return selectedProducts;
+};
 
 const resetStages = () => {
   stages.value.forEach(stage => {
