@@ -10,11 +10,10 @@ import {
   getAccountCompositeRequest,
   getCreateOrderRequest,
   getAddItemsToCartRequest,
-  getCustomerInteractionReq,
   getAssetOrderItems,
   getPostJobRecordFixRequest
 } from "@/assets/cpqActions";
-import { fetchRecords, saveRecord, fetchRecordList } from "@/assets/storageUtil";
+import { fetchRecords, saveRecord } from "@/assets/storageUtil";
 
 import GuidedFlow from "../elements/GuidedFlow.vue";
 import PrimaryButton from "../elements/PrimaryButton.vue";
@@ -35,7 +34,7 @@ import 'vue3-easy-data-table/dist/style.css';
 //faker
 import { faker } from '@faker-js/faker/locale/en_AU';
 //icons
-import { HeartIcon, UserCircleIcon, ShoppingCartIcon, SquaresPlusIcon, PaperAirplaneIcon } from '@heroicons/vue/24/solid';
+import { HeartIcon, UserCircleIcon, ShoppingCartIcon, SquaresPlusIcon, PaperAirplaneIcon, ArrowPathIcon, BoltIcon } from '@heroicons/vue/24/solid';
 
 const sfHostURL = ref('');
 const orgIdentifier = ref('');
@@ -549,6 +548,25 @@ const saveDefaultPriceList = async () => {
   }
 }
 
+//Set Default Product
+const saveDefaultProduct = async (Id, Name) => {
+  try {
+    const obj = {
+      type: 'productList',
+      id: Id,
+      name: Name,
+      default: true
+    };
+    const result = await saveRecord(obj, sfHostURL.value, false);
+    console.log('priceList save result--> ' + result);
+    addToast('Default pricelist saved to : ' + Name, 'Success');
+  }
+  catch (error) {
+    console.log('error --> ' + error);
+    addToast('Something failed, please check dev console', 'Error');
+  }
+}
+
 //Set Favorites
 const setDefaultPriceList = async () => {
   const result = await fetchRecords(sfHostURL.value);
@@ -657,10 +675,12 @@ onMounted(async () => {
       <PageTitle>Test Data Generator</PageTitle>
       <PageDescription>Create dummy accounts, order, add products from pricelist and submit order.</PageDescription>
       <div>
-        <PrimaryButton @click="oneClickAutomation">
+        <PrimaryButton @click="oneClickAutomation" :isBlue=true>
           <LoadingCircle v-if="isOneClickBtnLoading" :cssStyle="'h-4 w-4 mr-2'"> {{ oneClickStatus ?? 'Loading..' }}
           </LoadingCircle>
-          <p v-else>One Click Create</p>
+          <div v-else class="flex justify-between">
+            <BoltIcon class="h-4 w-4 text-gray-100 dark:text-gray-500 mr-2" /> One Click Create
+          </div>
         </PrimaryButton>
       </div>
     </div>
@@ -714,13 +734,16 @@ onMounted(async () => {
           <div class="w-full mr-3 lg:w-2/6">
             <InputLabel value="Actions" />
             <div class="block w-full bg-gray-100 dark:bg-gray-700 dark:border-gray-600 mt-2 mb-4 p-4 rounded-md border">
-              <PrimaryButton class="" @click="generateFakerData">Refresh Data</PrimaryButton>
+              <PrimaryButton @click="generateFakerData">
+                <ArrowPathIcon class="h-4 w-4 text-gray-100 dark:text-gray-500 mr-2" />
+                Refresh Data
+              </PrimaryButton>
               <p class="text-sm text-gray-600 dark:text-gray-300 mt-4">You can generate virtually unlimited data by
                 clicking above Refresh Button (It will not insert records in Salesforce)</p>
             </div>
 
             <div class="block w-full bg-gray-100 dark:bg-gray-700 dark:border-gray-600 mt-2 mb-4 p-4 rounded-md border">
-              <PrimaryButton class="" @click="createAccountRecords">
+              <PrimaryButton @click="createAccountRecords">
                 <LoadingCircle v-if="isAccountBtnLoading" :cssStyle="'h-4 w-4 mr-2'">Creating data...</LoadingCircle>
                 <LoadingCircle v-else-if="isInitDataLoaded" :cssStyle="'h-4 w-4 mr-2'">Initializing required data...
                 </LoadingCircle>
@@ -820,8 +843,8 @@ onMounted(async () => {
                       @change="toggleProductInList(Id, Name, $event.target.checked)" :checked="isChecked" />
                     <!-- <TextInput type="number" class="my-2 !px-2 !py-1 !w-20 text-xs" placeholder="Quantity"
                       @change="updateProductQuantity(Id, $event.target.value)" /> -->
-                    <SVGIconButton :icon="Icon_Favorite" :isSquare="false" color="blue" class="!p-1 ml-2"
-                      title="Add to Favorite" />
+                    <SVGIconButton @click="saveDefaultProduct(Id, Name)" :icon="Icon_Favorite" :isSquare="false"
+                      color="blue" class="!p-1 ml-2" title="Add to Favorite" />
                   </template>
                   <template #item-Product2ProductCode="{ Product2 }">
                     {{ Product2.ProductCode }}
