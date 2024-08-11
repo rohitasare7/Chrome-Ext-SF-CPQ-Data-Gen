@@ -6,7 +6,7 @@ import { sfConn } from "@/assets/helper";
 import { extractValue, addToast } from "@/assets/globalUtil";
 
 import { getActionByName } from "@/assets/sfdcActions";
-import { getAccountCompositeRequest, getCreateOrderRequest, getAddItemsToCartRequest, getCustomerInteractionReq } from "@/assets/cpqActions";
+import { getAccountCompositeRequest, getCreateOrderRequest, getAddItemsToCartRequest, getCustomerInteractionReq, getAssetOrderItems } from "@/assets/cpqActions";
 import { fetchRecords, saveRecord, fetchRecordList } from "@/assets/storageUtil";
 
 import GuidedFlow from "../elements/GuidedFlow.vue";
@@ -248,6 +248,7 @@ const getHttpStatusCode = (referenceId, compositeResponse) => {
 const createOrder = async () => {
   isCreateOrderBtnLoading.value = true;
   const serviceAccId = getIdByReferenceId('refAccountSA');
+  const billingAccId = getIdByReferenceId('refAccountBA');
   if (serviceAccId == null) {
     addToast('Please create Accounts and related data first', 'Error');
     selectedStage.value = 'random_data';
@@ -257,6 +258,7 @@ const createOrder = async () => {
   try {
     const params = {
       accId: serviceAccId,
+      billingAccountId : billingAccId,
       priceListId: selectedPriceList.value
     }
     const reqStr = getCreateOrderRequest(params);
@@ -457,6 +459,15 @@ const createInteraction = async () => {
   isCustInteractionBtnLoading.value = false;
 }
 
+const getAssetList = async () => {
+  const params = {
+    serviceAccId: '001Og000006TgutIAC' //getIdByReferenceId('refAccountSA'),
+    };
+  const reqStr = getAssetOrderItems(params);
+  const response = await hitSFIAPI('CRUD_CompositeAPI', reqStr, null, 'POST');
+    console.log('getAssetList response --> ' + JSON.stringify(response));
+} 
+
 //Save Favorites
 const saveDefaultPriceList = async () => {
   try {
@@ -573,6 +584,9 @@ onMounted(async () => {
 </script>
 
 <template>
+  <PrimaryButton @click="getAssetList">
+    Fetch Asset List
+  </PrimaryButton>
   <!-- Init Main Page -->
   <TextDesc v-if="sfHostURL" class="mt-2 mb-4">Current Org : {{ sfHostURL }}</TextDesc>
 
@@ -658,19 +672,24 @@ onMounted(async () => {
                 CA, BA, SA, Contact and Subscription from below links.</p>
 
               <div v-if="createdAccList.length > 0">
-                <a :href="`https://${sfHostURL}/${getIdByReferenceId('refAccountCA')}`" target="_blank"
+                <a :href="`https://${sfHostURL}/lightning/r/Account/${getIdByReferenceId('refAccountCA')}/view`"
+                  target="_blank"
                   class="text-blue-700 dark:text-blue-100  hover:text-blue-800 font-semibold text-sm mb-2 mt-4 block w-full">
                   Consumer Account</a>
-                <a :href="`https://${sfHostURL}/${getIdByReferenceId('refAccountBA')}`" target="_blank"
+                <a :href="`https://${sfHostURL}/lightning/r/Account/${getIdByReferenceId('refAccountBA')}/view`"
+                  target="_blank"
                   class="text-blue-700 dark:text-blue-100  hover:text-blue-800 font-semibold text-sm mb-2 block w-full">
                   Billing Account</a>
-                <a :href="`https://${sfHostURL}/${getIdByReferenceId('refAccountSA')}`" target="_blank"
+                <a :href="`https://${sfHostURL}/lightning/r/Account/${getIdByReferenceId('refAccountSA')}/view`"
+                  target="_blank"
                   class="text-blue-700 dark:text-blue-100  hover:text-blue-800 font-semibold text-sm mb-2 block w-full">
                   Service Account</a>
-                <a :href="`https://${sfHostURL}/${getIdByReferenceId('refContact')}`" target="_blank"
+                <a :href="`https://${sfHostURL}/lightning/r/Contact/${getIdByReferenceId('refContact')}/view`"
+                  target="_blank"
                   class="text-blue-700 dark:text-blue-100  hover:text-blue-800 font-semibold text-sm mb-2 block w-full">
                   Contact</a>
-                <a :href="`https://${sfHostURL}/${getIdByReferenceId('refSubscription')}`" target="_blank"
+                <a :href="`https://${sfHostURL}/lightning/r/vlocity_cmt__Subscription__c/${getIdByReferenceId('refSubscription')}/view`"
+                  target="_blank"
                   class="text-blue-700 dark:text-blue-100  hover:text-blue-800 font-semibold text-sm mb-2 block w-full">
                   Subscription</a>
               </div>
@@ -697,7 +716,7 @@ onMounted(async () => {
             <div v-if="orderId"
               class="block w-full bg-gray-100 dark:bg-gray-700 dark:border-gray-600 my-4 p-4 rounded-md border">
               <p class="text-sm text-gray-600 dark:text-gray-300">New order created : {{ orderNumber }}</p>
-              <a :href="`https://${sfHostURL}/${orderId}`" target="_blank"
+              <a :href="`https://${sfHostURL}/lightning/r/Order/${orderId}/view`" target="_blank"
                 class="text-blue-700 dark:text-blue-100  hover:text-blue-800 font-semibold text-sm mb-2 mt-4 block w-full">
                 {{ orderId }}</a>
             </div>
@@ -780,7 +799,7 @@ onMounted(async () => {
               <p class="text-sm text-gray-600 dark:text-gray-300">Order : {{ orderNumber }} has been submitted, you can
                 check it
                 in your org by visiting below link for further fulfilment..</p>
-              <a :href="`https://${sfHostURL}/${orderId}`" target="_blank"
+              <a :href="`https://${sfHostURL}/lightning/r/Order/${orderId}/view`" target="_blank"
                 class="text-blue-700 dark:text-blue-100  hover:text-blue-800 font-semibold text-sm mb-2 mt-4 block w-full">
                 Open Order in SF</a>
             </div>

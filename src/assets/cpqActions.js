@@ -14,6 +14,7 @@ const getAccountCompositeRequest = (params) => {
                 "body": {
                     "Name": `CA ${params.faker.fullName} ${Math.floor(Math.random() * 10)}`,
                     "RecordTypeId": `${params.recordTypeCA}`,
+                    "AccountNumber": `${params.faker.AccountNumbers.CA}`,
                     "vlocity_cmt__Status__c": "Active",
                     "Phone": `${params.faker.phone}`,
                     "BillingCity": `${params.faker.BillingCity}`,
@@ -31,6 +32,7 @@ const getAccountCompositeRequest = (params) => {
                 "body": {
                     "Name": `BA ${params.faker.fullName} ${Math.floor(Math.random() * 10)}`,
                     "RecordTypeId": `${params.recordTypeBA}`,
+                    "AccountNumber": `${params.faker.AccountNumbers.BA}`,
                     "vlocity_cmt__Status__c": "Active",
                     "Phone": `${params.faker.phone}`,
                     "BillingCity": `${params.faker.BillingCity}`,
@@ -49,6 +51,7 @@ const getAccountCompositeRequest = (params) => {
                 "body": {
                     "Name": `SA ${params.faker.fullName} ${Math.floor(Math.random() * 10)}`,
                     "RecordTypeId": `${params.recordTypeSA}`,
+                    "AccountNumber": `${params.faker.AccountNumbers.SA}`,
                     "vlocity_cmt__Status__c": "Active",  // add options later
                     "Phone": `${params.faker.phone}`,
                     "BillingCity": `${params.faker.BillingCity}`,
@@ -73,7 +76,7 @@ const getAccountCompositeRequest = (params) => {
                     "FirstName": `${params.faker.firstName}`,
                     "LastName": `${params.faker.lastName}`,
                     "Phone": `${params.faker.phone}`,
-                    "OtherPhone" : `${params.faker.phone}`,
+                    "OtherPhone": `${params.faker.phone}`,
                     "Email": `${params.faker.vlocity_cmt__BillingEmailAddress__c}`,
                     "MailingCity": `${params.faker.BillingCity}`,
                     "MailingCountry": `${params.faker.BillingCountry}`,
@@ -123,6 +126,12 @@ const getCreateOrderRequest = (params) => {
             },
             {
                 "AccountId": `${params.accId}`
+            },
+            {
+                "vlocity_cmt__DefaultBillingAccountId__c": `${params.billingAccountId}`
+            },
+            {
+                "vlocity_cmt__DefaultServiceAccountId__c": `${params.accId}`
             }
         ],
         "subaction": "createOrder",
@@ -157,8 +166,8 @@ const getCustomerInteractionReq = (params) => {
                 "referenceId": "refCustInteraction",
                 "body": {
                     "Name": `Int for ${params.fullName}`,
-                    "vlocity_cmt__Channel__c" : "Agent",
-                    "vlocity_cmt__Comments__c" : "Sample comment, this record was created automatically.",
+                    "vlocity_cmt__Channel__c": "Agent",
+                    "vlocity_cmt__Comments__c": "Sample comment, this record was created automatically.",
                     "vlocity_cmt__AccountId__c": `${params.recordTypeSA}`,
                     "vlocity_cmt__ContactId__c": "Active",
                     "vlocity_cmt__Status__c": `Completed`, // add options later
@@ -171,5 +180,39 @@ const getCustomerInteractionReq = (params) => {
     return requestStr;
 }
 
+//Composite API to get Asset, OrderItems
+const getAssetOrderItems = (params) => {
+    const requestStr = {
+        "compositeRequest": [
+            {
+                "method": "GET",
+                "url": `/services/data/v${apiVersion}/query/?q=SELECT Id FROM Asset WHERE AccountId ='${params.serviceAccId}'`,
+                "referenceId": "refAssetList",
+            },
+            {
+                "method": "GET",
+                "url": `/services/data/v${apiVersion}/query/?q=SELECT Id FROM OrderItem WHERE vlocity_cmt__ServiceAccountId__c ='${params.serviceAccId}'`,
+                "referenceId": "refOrderItemtList",
+            },
+        ]
+    };
+    return requestStr;
+}
+
+const getPostJobRecordFixRequest = (params) => {
+    const requestStr = {
+        "allOrNone": false,
+        "records": params.recordList
+    }
+    return requestStr;
+}
+
 // Export the getActionByName function
-export { getAccountCompositeRequest, getCreateOrderRequest, getAddItemsToCartRequest, getCustomerInteractionReq };
+export {
+    getAccountCompositeRequest,
+    getCreateOrderRequest,
+    getAddItemsToCartRequest,
+    getCustomerInteractionReq,
+    getPostJobRecordFixRequest,
+    getAssetOrderItems
+};
