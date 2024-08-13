@@ -1,7 +1,15 @@
 // const apiVersion = 61.0
 import { apiVersion } from "./helper";
 /*
-Fields to add --> Acc : Type, SA : ShippingAddress, industry, account site, SLA, Customer Priority, Contact preference
+Fields to add --> industry, account site, SLA, Customer Priority, Contact preference
+vlocity_cmt__vSLA__c = 'Gold'
+Rating = 'Hot'
+Type = 'Customer'
+vlocity_cmt__BillCycle__c = 1
+// lookups
+vlocity_cmt__PartyId__c
+vlocity_cmt__PremisesId__c
+
 */
 //Create contact also
 const getAccountCompositeRequest = (params) => {

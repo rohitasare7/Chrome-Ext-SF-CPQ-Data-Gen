@@ -50,10 +50,13 @@ html.dark .vs__dropdown-toggle {
     @apply dark:border-gray-600
 }
 
-html.dark .vs__clear , html.dark  .vs__open-indicator {
+html.dark .vs__clear, html.dark .vs__open-indicator {
     @apply dark:fill-gray-500
 }
 
+.vs__dropdown-toggle {
+    border-radius: 0.5rem;
+}
 
 .tableCSS {
     --easy-table-border: 1px solid #DDD;

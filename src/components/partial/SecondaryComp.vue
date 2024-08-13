@@ -36,7 +36,7 @@ import { faker } from '@faker-js/faker/locale/en_AU';
 //icons
 import {
   HeartIcon, UserCircleIcon, ShoppingCartIcon, SquaresPlusIcon,
-  PaperAirplaneIcon, ArrowPathIcon, BoltIcon, UsersIcon, ArrowRightCircleIcon
+  PaperAirplaneIcon, ArrowPathIcon, BoltIcon, UsersIcon, ArrowRightCircleIcon, ArrowUpRightIcon
 } from '@heroicons/vue/24/solid';
 
 const sfHostURL = ref('');
@@ -201,7 +201,7 @@ const generateFakerData = () => {
       BA: faker.helpers.fromRegExp(/[0-9]{6}/),
       CA: faker.helpers.fromRegExp(/[0-9]{6}/)
     },
-    vlocity_cmt__BillingEmailAddress__c: firstName+'_'+lastName+'@test.com',
+    vlocity_cmt__BillingEmailAddress__c: firstName + '_' + lastName + '@test.com',
   };
 }
 
@@ -784,7 +784,7 @@ onMounted(async () => {
           class="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4">
           <div class="w-full mr-3 lg:w-4/6">
             <InputLabel value="Random Dummy Data" />
-            <div class="relative overflow-x-auto sm:rounded-lg w-full mt-2 border dark:border-gray-700">
+            <div class="relative overflow-x-auto sm:rounded-lg w-full mt-2 border dark:border-gray-600 shadow-md">
               <table class="w-full text-sm text-left rtl:text-right text-gray-600 dark:text-gray-400">
                 <thead
                   class="text-xs text-gray-700 uppercase border-b dark:border-gray-500 bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
