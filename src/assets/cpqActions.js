@@ -111,24 +111,24 @@ const formatDate = (date) => {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
 
-    return `${day}/${month}/${year}`;
+    return `${year}-${month}-${day}`;
 };
 
 const getCreateOrderRequest = (params) => {
     const currentDate = new Date();
-    const formattedDate = formatDate(currentDate);
+    const formattedDate = formatDate(currentDate); // YYYY-MM-DD
     const requestStr = {
         "methodName": "createCart",
         "objectType": "Order",
         "inputFields": [
             {
-                "effectivedate": `${formattedDate}`  // DD/MM/YYYY
+                "effectivedate": `${formattedDate}`
             },
             {
-                "status": "Draft"  // add options later
+                "status": "Draft"
             },
             {
-                "Name": "Headless CPQ Order"  // add options later
+                "Name": "Headless CPQ Order"
             },
             {
                 "vlocity_cmt__PriceListId__c": `${params.priceListId}`
