@@ -201,7 +201,7 @@ const generateFakerData = () => {
       BA: faker.helpers.fromRegExp(/[0-9]{6}/),
       CA: faker.helpers.fromRegExp(/[0-9]{6}/)
     },
-    vlocity_cmt__BillingEmailAddress__c: faker.internet.email({ provider: 'test.com' }),
+    vlocity_cmt__BillingEmailAddress__c: firstName+'_'+lastName+'@test.com',
   };
 }
 

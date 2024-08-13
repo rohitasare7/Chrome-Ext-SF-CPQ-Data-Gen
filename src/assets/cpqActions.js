@@ -106,14 +106,23 @@ const getAccountCompositeRequest = (params) => {
     return requestStr;
 }
 
+const formatDate = (date) => {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+
+    return `${day}/${month}/${year}`;
+};
+
 const getCreateOrderRequest = (params) => {
-    var today = new Date();
+    const currentDate = new Date();
+    const formattedDate = formatDate(currentDate);
     const requestStr = {
         "methodName": "createCart",
         "objectType": "Order",
         "inputFields": [
             {
-                "effectivedate": `${today.toLocaleDateString("en-US")}`  // add options later
+                "effectivedate": `${formattedDate}`  // DD/MM/YYYY
             },
             {
                 "status": "Draft"  // add options later
