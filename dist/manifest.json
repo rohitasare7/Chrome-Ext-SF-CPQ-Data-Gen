@@ -37,6 +37,9 @@
         "https://*.my.site.com/*",
         "https://*.cloudforce.com/*"
       ],
+      "exclude_matches": [
+        "https://help.salesforce.com/*"
+      ],
       "js": [
         "js/content-script.js"
       ]
