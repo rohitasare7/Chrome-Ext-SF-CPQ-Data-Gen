@@ -209,8 +209,8 @@ const generateFakerData = () => {
     BillingPostalCode: faker.location.zipCode('#####'),
     BillingState: faker.location.state(),
     BillingStreet: faker.location.streetAddress(true),
-    vlocity_cmt__SubscriptionNumber__c: phoneStr,
-    vlocity_cmt__ServiceIdentifier__c: faker.helpers.fromRegExp(/[0-9]{10}/),
+    vlocity_cmt__SubscriptionNumber__c: faker.helpers.fromRegExp(/[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}/),
+    vlocity_cmt__ServiceIdentifier__c: phoneStr,
     AccountNumbers: {
       SA: faker.helpers.fromRegExp(/[0-9]{6}/),
       BA: faker.helpers.fromRegExp(/[0-9]{6}/),
