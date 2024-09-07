@@ -112,6 +112,18 @@ const selectedStage = ref('random_data');
 const accRecordTypes = ref('');
 const fakerData = ref(null);
 const isOrderSubmitted = ref(false);
+// List of editable fields
+const editableFields = new Set([
+  'vlocity_cmt__ServiceIdentifier__c',
+  'phone',
+  'BillingStreet',
+  'BillingCity',
+  'BillingState',
+  'BillingCountry',
+  'BillingPostalCode',
+  'vlocity_cmt__SubscriptionNumber__c',
+  'vlocity_cmt__BillingEmailAddress__c'
+]);
 //loading button vars
 const isAccountBtnLoading = ref(false);
 const isCreateOrderBtnLoading = ref(false);
@@ -179,22 +191,25 @@ const getRecTypeIdByName = (name) => {
   return record ? record.Id : null;
 };
 
+const selectedGender = ref('');
+
 //Generate Faker Data
 const generateFakerData = () => {
-  const firstName = faker.person.firstName();
-  const lastName = faker.person.lastName();
+  const firstName = faker.person.firstName(selectedGender.value ?? undefined);
+  const lastName = faker.person.lastName(selectedGender.value ?? undefined);
+  const phoneStr = faker.helpers.fromRegExp(/64[0-9]{10}/);
 
   fakerData.value = {
     firstName,
     lastName,
     fullName: firstName + ' ' + lastName,
-    phone: faker.phone.number(),
+    phone: phoneStr,
     BillingCity: faker.location.city(),
     BillingCountry: 'Australia', //faker.location.country()
     BillingPostalCode: faker.location.zipCode('#####'),
     BillingState: faker.location.state(),
     BillingStreet: faker.location.streetAddress(true),
-    vlocity_cmt__SubscriptionNumber__c: faker.helpers.fromRegExp(/[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}/),
+    vlocity_cmt__SubscriptionNumber__c: phoneStr,
     vlocity_cmt__ServiceIdentifier__c: faker.helpers.fromRegExp(/[0-9]{10}/),
     AccountNumbers: {
       SA: faker.helpers.fromRegExp(/[0-9]{6}/),
@@ -749,7 +764,7 @@ onMounted(async () => {
 
 <template>
   <!-- Init Main Page -->
-  <TextDesc v-if="sfHostURL" class="mt-2 mb-4">Current Org : {{ sfHostURL }}</TextDesc>
+  <TextDesc v-if="sfHostURL" class="mt-2 mb-4"><b>Current Org :</b> {{ sfHostURL }}</TextDesc>
 
   <div class="flex justify-center text-center">
     <div class="flex flex-col">
@@ -804,7 +819,15 @@ onMounted(async () => {
                       {{ key }}
                     </th>
                     <td class="px-6 py-2">
-                      {{ value }}
+                      <!-- Check if the key is in the set of editable fields -->
+                      <template v-if="editableFields.has(key)">
+                        <!-- <input v-model="fakerData[key]" type="text"
+                          class="border p-2 rounded dark:bg-gray-800 dark:text-white" /> -->
+                        <TextInput v-model="fakerData[key]" type="text" />
+                      </template>
+                      <template v-else>
+                        {{ value }}
+                      </template>
                     </td>
                   </tr>
 
@@ -815,6 +838,26 @@ onMounted(async () => {
           <div class="w-full mr-3 lg:w-2/6">
             <InputLabel value="Actions" />
             <div class="block w-full bg-gray-100 dark:bg-gray-700 dark:border-gray-600 mt-2 mb-4 p-4 rounded-md border">
+
+              <InputLabel value="Change Gender (Optional)" class="text-sm mb-2" />
+              <ul
+                class="items-center w-full mb-4 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-lg sm:flex dark:bg-gray-600 dark:border-gray-500 dark:text-white">
+                <li class="w-full border-b border-gray-200 sm:border-b-0 sm:border-r dark:border-gray-500">
+                  <div class="flex items-center ps-3">
+                    <input type="radio" value="male" v-model="selectedGender" name="gender_male"
+                      class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 dark:bg-gray-600 dark:border-gray-500">
+                    <label class="w-full py-3 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Male</label>
+                  </div>
+                </li>
+                <li class="w-full border-b border-gray-200 sm:border-b-0 sm:border-r dark:border-gray-500">
+                  <div class="flex items-center ps-3">
+                    <input type="radio" value="female" v-model="selectedGender" name="gender_female"
+                      class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 dark:bg-gray-600 dark:border-gray-500">
+                    <label class="w-full py-3 ms-2 text-sm font-medium text-gray-900 dark:text-gray-300">Female</label>
+                  </div>
+                </li>
+              </ul>
+
               <PrimaryButton @click="generateFakerData">
                 <ArrowPathIcon class="h-4 w-4 text-gray-100 dark:text-gray-500 mr-2" />
                 Refresh Data
@@ -977,8 +1020,12 @@ onMounted(async () => {
                 check it
                 in your org by visiting below link for further fulfilment..</p>
               <a :href="`https://${sfHostURL}/lightning/r/Order/${orderId}/view`" target="_blank"
-                class="text-blue-700 dark:text-blue-100  hover:text-blue-800 font-semibold text-sm mb-2 mt-4 block w-full">
-                Open Order in SF</a>
+                class="text-blue-700 dark:text-blue-100  hover:text-blue-800 font-semibold text-sm mb-2 mt-4 block w-full">Open
+                Order in SF</a>
+              <a :href="`https://${sfHostURL}/lightning/r/Account/${getIdByReferenceId('refAccountSA')}/view`"
+                target="_blank"
+                class="text-blue-700 dark:text-blue-100  hover:text-blue-800 font-semibold text-sm mb-2 mt-4 block w-full">Open
+                Service Account in SF</a>
               <div v-if="!isRecordPatchingDone" class="mt-4">
                 <p class="text-sm text-gray-600 dark:text-gray-300">You can patch Assets, Order Items and create
                   Interaction Records by clicking below button (Once order is activated).</p>

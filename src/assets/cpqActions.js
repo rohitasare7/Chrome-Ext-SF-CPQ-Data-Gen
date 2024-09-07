@@ -11,6 +11,16 @@ vlocity_cmt__PartyId__c
 vlocity_cmt__PremisesId__c
 
 */
+const formatDate = () => {
+    const currentDate = new Date();
+    // const formattedDate = formatDate(currentDate);
+    const day = String(currentDate.getDate()).padStart(2, '0');
+    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const year = currentDate.getFullYear();
+
+    return `${year}-${month}-${day}`;
+};
+
 //Create contact also
 const getAccountCompositeRequest = (params) => {
     const requestStr = {
@@ -30,6 +40,7 @@ const getAccountCompositeRequest = (params) => {
                     "BillingPostalCode": `${params.faker.BillingPostalCode}`,
                     "BillingState": `${params.faker.BillingState}`,
                     "BillingStreet": `${params.faker.BillingStreet}`,
+                    "vlocity_cmt__CustomerSinceDate__c": `${formatDate()}`,
                     "vlocity_cmt__Active__c": "Yes"
                 }
             },
@@ -90,7 +101,7 @@ const getAccountCompositeRequest = (params) => {
                     "MailingCountry": `${params.faker.BillingCountry}`,
                     "MailingPostalCode": `${params.faker.BillingPostalCode}`,
                     "MailingStreet": `${params.faker.BillingState}`,
-                    "AccountId": "@{refAccountSA.id}"
+                    "AccountId": "@{refAccountCA.id}"
                 }
             },
             {
@@ -107,30 +118,58 @@ const getAccountCompositeRequest = (params) => {
                     "vlocity_cmt__StartDate__c": `${params.startDate}`,
                     "vlocity_cmt__EndDate__c": ""
                 }
-            }
+            },
+            {
+                "method": "POST",
+                "url": `/services/data/v${apiVersion}/sobjects/Case`,
+                "referenceId": "refCase",
+                "body": {
+                    "AccountId": "@{refAccountSA.id}",
+                    "Subject": "Login Issue",
+                    "Description": "Customer is unable to log in to their account despite using the correct credentials.",
+                    "Status": "New",
+                    "Priority": "High"
+                }
+            },
+            {
+                "method": "POST",
+                "url": `/services/data/v${apiVersion}/sobjects/Task`,
+                "referenceId": "refTask",
+                "body": {
+                    "WhatId": "@{refAccountSA.id}",
+                    "Subject": "Follow up on login issue",
+                    "Description": "Contact the customer to resolve the login issue.",
+                    "Status": "New",
+                    "Priority": "High",
+                    "ActivityDate": `${formatDate()}`,
+                }
+            },
+            // {
+            //     "method": "POST",
+            //     "url": `/services/data/v${apiVersion}/sobjects/AccountContactRelation`,
+            //     "referenceId": "refACR",
+            //     "body": {
+            //         "IsActive": true,
+            //         "ContactId" : "@{refContact.id}",
+            //         "AccountId": "@{refAccountCA.id}",
+            //         "Roles": "Primary Contact"
+            //     }
+            // }
         ],
         "allOrNone": true
     };
     return requestStr;
 }
 
-const formatDate = (date) => {
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-
-    return `${year}-${month}-${day}`;
-};
-
 const getCreateOrderRequest = (params) => {
-    const currentDate = new Date();
-    const formattedDate = formatDate(currentDate); // YYYY-MM-DD
+    // const currentDate = new Date();
+    // const formattedDate = formatDate(currentDate); // YYYY-MM-DD
     const requestStr = {
         "methodName": "createCart",
         "objectType": "Order",
         "inputFields": [
             {
-                "effectivedate": `${formattedDate}`
+                "effectivedate": `${formatDate()}`
             },
             {
                 "status": "Draft"

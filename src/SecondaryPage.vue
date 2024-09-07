@@ -4,6 +4,7 @@
       <ToastList />
       <ToggleLightDarkMode />
       <SecondaryComp />
+      <Footer></Footer>
     </div>
   </div>
 </template>
@@ -12,6 +13,7 @@
 import SecondaryComp from './components/partial/SecondaryComp.vue';
 import ToggleLightDarkMode from './components/elements/ToggleLightDarkMode.vue';
 import ToastList from './components/partial/ToastList.vue';
+import Footer from './components/elements/Footer.vue';
 import './assets/index.css';
 
 export default {
@@ -19,7 +21,8 @@ export default {
   components: {
     SecondaryComp,
     ToggleLightDarkMode,
-    ToastList
+    ToastList,
+    // Footer
   }
 }
 </script>
