@@ -24,6 +24,7 @@ import PageTitle from "../elements/PageTitle.vue";
 import InputLabel from "../elements/InputLabel.vue";
 import SVGIconButton from "../elements/SVGIconButton.vue";
 import Icon_Favorite from "@/assets/icons/Icon_Favorite.vue";
+import CopyButton from "../elements/CopyButton.vue";
 
 import vSelect from "vue-select";
 import "vue-select/dist/vue-select.css";
@@ -138,6 +139,13 @@ const createdAccList = ref([]);
 const orderId = ref('');
 const orderNumber = ref('');
 const selectedProductList = ref([]);
+const recordIdMap = ref({
+  serviceAccId: null,
+  billingAccId: null,
+  consumerAccId: null,
+  contactId: null,
+  subscriptionId: null,
+});
 
 const stages = ref([
   { id: 'random_data', title: 'Random Data', description: 'Check/Refresh and Insert Records', icon: UserCircleIcon, completed: false },
@@ -248,6 +256,11 @@ const createAccountRecords = async () => {
       addToast('Accounts, Contact and Subscription records are created.', 'Success');
       updateStageCompletion('random_data');
     }
+    recordIdMap.value.serviceAccId = getIdByReferenceId('refAccountSA');
+    recordIdMap.value.billingAccId = getIdByReferenceId('refAccountBA');
+    recordIdMap.value.consumerAccId = getIdByReferenceId('refAccountCA');
+    recordIdMap.value.contactId = getIdByReferenceId('refContact');
+    recordIdMap.value.subscriptionId = getIdByReferenceId('refSubscription');
   }
   catch (error) {
     addToast('Something failed, please check console.', 'Error');
@@ -270,8 +283,8 @@ const getHttpStatusCode = (referenceId, compositeResponse) => {
 //Create Blank Order
 const createOrder = async () => {
   isCreateOrderBtnLoading.value = true;
-  const serviceAccId = getIdByReferenceId('refAccountSA');
-  const billingAccId = getIdByReferenceId('refAccountBA');
+  const serviceAccId = recordIdMap.value.serviceAccId;
+  const billingAccId = recordIdMap.value.billingAccId;
   if (serviceAccId == null) {
     addToast('Please create Accounts and related data first', 'Error');
     selectedStage.value = 'random_data';
@@ -499,9 +512,9 @@ const orderItemList = ref([]);
 //Patch Assets, Order Items, Create Interaction Record
 const patchRecordsPostOrder = async () => {
   const params = {
-    serviceAccId: getIdByReferenceId('refAccountSA'),
+    serviceAccId: recordIdMap.value.serviceAccId,
     fullName: fakerData.value.fullName,
-    contactId: getIdByReferenceId('refContact'),
+    contactId: recordIdMap.value.contactId,
   };
   const reqStr = getAssetOrderItems(params);
   //get Asset, Order Items Records, Create Customer Interaction Record.
@@ -541,8 +554,8 @@ const maxRetries = 5;
 const updateRecordsBulk = async () => {
   try {
     const serviceId = fakerData.value.vlocity_cmt__ServiceIdentifier__c;
-    const biillingAccId = getIdByReferenceId('refAccountBA');
-    const subscriptionId = getIdByReferenceId('refSubscription');
+    const biillingAccId = recordIdMap.value.billingAccId;
+    const subscriptionId = recordIdMap.value.subscriptionId;
 
     //Create Asset Records Composite Req
     const assetReq = assetList.value.map(Id => {
@@ -688,6 +701,10 @@ const resetData = () => {
   selectedStage.value = 'random_data';
   assetList.value = [];
   orderItemList.value = [];
+  // Reset recordIdMap properties
+  Object.keys(recordIdMap.value).forEach(key => {
+    recordIdMap.value[key] = null;
+  });
 }
 
 //Creates all records in 1 click
@@ -739,6 +756,22 @@ const initData = async () => {
   await getProductList();
   isInitDataLoaded.value = false;
 }
+
+// Final links
+const accountLinks = [
+  { label: 'Consumer Account', idKey: 'consumerAccId', objectType: 'Account' },
+  { label: 'Billing Account', idKey: 'billingAccId', objectType: 'Account' },
+  { label: 'Service Account', idKey: 'serviceAccId', objectType: 'Account' },
+  { label: 'Contact', idKey: 'contactId', objectType: 'Contact' },
+  { label: 'Subscription', idKey: 'subscriptionId', objectType: 'vlocity_cmt__Subscription__c' }
+];
+
+const generateAccountLink = (label, idKey, objectType) => {
+  return {
+    url: `https://${sfHostURL.value}/lightning/r/${objectType}/${recordIdMap.value[idKey]}/view`,
+    idValue: recordIdMap.value[idKey]
+  };
+};
 
 //On page load
 onMounted(async () => {
@@ -883,26 +916,14 @@ onMounted(async () => {
                 CA, BA, SA, Contact and Subscription from below links.</p>
 
               <div v-if="createdAccList.length > 0">
-                <a :href="`https://${sfHostURL}/lightning/r/Account/${getIdByReferenceId('refAccountCA')}/view`"
-                  target="_blank"
-                  class="text-blue-700 dark:text-blue-100  hover:text-blue-800 font-semibold text-sm mb-2 mt-4 block w-full">
-                  Consumer Account</a>
-                <a :href="`https://${sfHostURL}/lightning/r/Account/${getIdByReferenceId('refAccountBA')}/view`"
-                  target="_blank"
-                  class="text-blue-700 dark:text-blue-100  hover:text-blue-800 font-semibold text-sm mb-2 block w-full">
-                  Billing Account</a>
-                <a :href="`https://${sfHostURL}/lightning/r/Account/${getIdByReferenceId('refAccountSA')}/view`"
-                  target="_blank"
-                  class="text-blue-700 dark:text-blue-100  hover:text-blue-800 font-semibold text-sm mb-2 block w-full">
-                  Service Account</a>
-                <a :href="`https://${sfHostURL}/lightning/r/Contact/${getIdByReferenceId('refContact')}/view`"
-                  target="_blank"
-                  class="text-blue-700 dark:text-blue-100  hover:text-blue-800 font-semibold text-sm mb-2 block w-full">
-                  Contact</a>
-                <a :href="`https://${sfHostURL}/lightning/r/vlocity_cmt__Subscription__c/${getIdByReferenceId('refSubscription')}/view`"
-                  target="_blank"
-                  class="text-blue-700 dark:text-blue-100  hover:text-blue-800 font-semibold text-sm mb-2 block w-full">
-                  Subscription</a>
+                <div v-for="account in accountLinks" :key="account.idKey" class="flex items-center mb-2 mt-4">
+                  <a :href="generateAccountLink(account.label, account.idKey, account.objectType).url" target="_blank"
+                    class="text-blue-700 dark:text-blue-100 hover:text-blue-800 font-semibold text-sm">
+                    {{ account.label }}
+                  </a>
+                  <CopyButton :copyValue="generateAccountLink(account.label, account.idKey, account.objectType).idValue" :label="account.label"
+                    class="ml-2" />
+                </div>
               </div>
 
             </div>
@@ -1022,8 +1043,7 @@ onMounted(async () => {
               <a :href="`https://${sfHostURL}/lightning/r/Order/${orderId}/view`" target="_blank"
                 class="text-blue-700 dark:text-blue-100  hover:text-blue-800 font-semibold text-sm mb-2 mt-4 block w-full">Open
                 Order in SF</a>
-              <a :href="`https://${sfHostURL}/lightning/r/Account/${getIdByReferenceId('refAccountSA')}/view`"
-                target="_blank"
+              <a :href="`https://${sfHostURL}/lightning/r/Account/${recordIdMap.serviceAccId}/view`" target="_blank"
                 class="text-blue-700 dark:text-blue-100  hover:text-blue-800 font-semibold text-sm mb-2 mt-4 block w-full">Open
                 Service Account in SF</a>
               <div v-if="!isRecordPatchingDone" class="mt-4">
