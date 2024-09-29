@@ -548,7 +548,7 @@ const createOrderItemObj = (id, serviceId, subscriptionId, billingId) => {
 };
 
 //Process Records in Bulk for patching with retry
-let retryCount = 0;
+const retryCount = ref(0);
 const maxRetries = 5;
 
 const updateRecordsBulk = async () => {
@@ -570,14 +570,15 @@ const updateRecordsBulk = async () => {
     if (recordList.length > 0) {
       await initRecordsPatching(recordList);
     }
-    else if (retryCount < maxRetries) {
-      retryCount++;
+    else if (retryCount.value < maxRetries) {
+      retryCount.value++;
       setTimeout(async () => {
         await patchRecordsPostOrder();
       }, 5000);
-      addToast(`Retrying record patching in 5 Seconds... Attempt ${retryCount} of ${maxRetries}`, 'Success');
+      addToast(`Retrying record patching in 5 Seconds... Attempt ${retryCount.value} of ${maxRetries}`, 'Success');
     } else {
       isRecordPatchingDone.value = false;
+      retryCount.value = 0;
       addToast('Max retry attempts reached. Please patch manually.', 'Error');
     }
   }
